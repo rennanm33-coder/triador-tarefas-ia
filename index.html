@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triagem IA - Reunião para Ação</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger-bg: #fee2e2;
+      --danger-text: #991b1b;
+      --warning-bg: #fef3c7;
+      --warning-text: #92400e;
+      --success-bg: #dcfce7;
+      --success-text: #166534;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2.5rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    p.desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s ease;
+      margin-top: 0.5rem;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .result-section {
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+
+    .task-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-alta { background: var(--danger-bg); color: var(--danger-text); }
+    .badge-media { background: var(--warning-bg); color: var(--warning-text); }
+    .badge-baixa { background: var(--success-bg); color: var(--success-text); }
+
+    .task-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .task-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .task-meta span {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .raw-json {
+      margin-top: 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: #e2e8f0;
+      padding: 0.6rem;
+      border-radius: 6px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-card">
+    <h1>Triador de Tarefas com IA</h1>
+    <p class="desc">Transforma texto bruto de reunião em ação estruturada com Gemini API.</p>
+
+    <div class="form-group">
+      <label for="apiKey">Sua Chave de API</label>
+      <input type="password" id="apiKey" placeholder="Cole sua chave Gemini aqui...">
+    </div>
+
+    <div class="form-group">
+      <label for="transcript">Fala da Reunião ou Anotação Bruta</label>
+      <textarea id="transcript" placeholder="Ex: Ramon pediu para revisar a lista de patrocinadores até amanhã cedo com urgência...">Ramon, precisamos fechar a proposta do patrocinador master até quarta-feira com urgência máxima.</textarea>
+    </div>
+
+    <button id="actionBtn" onclick="processarTarefa()">Processar e Extrair Tarefa</button>
+
+    <div class="result-section" id="resultSection">
+      <label>Resultado Estruturado</label>
+      <div class="task-card">
+        <div class="task-header">
+          <span class="badge" id="badgePrioridade">PRIORIDADE</span>
+          <span class="task-meta">Responsável: <span id="respNome">-</span></span>
+        </div>
+        <div class="task-title" id="tarefaTitulo">-</div>
+      </div>
+      <div class="raw-json" id="rawJson"></div>
+    </div>
+  </div>
+
+  <script>
+    // Recupera a chave salva se houver
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) {
+      document.getElementById('apiKey').value = savedKey;
+    }
+
+    async function processarTarefa() {
+      const apiKeyInput = document.getElementById('apiKey');
+      const apiKey = apiKeyInput.value.trim();
+      const transcript = document.getElementById('transcript').value.trim();
+      const btn = document.getElementById('actionBtn');
+      const resultSection = document.getElementById('resultSection');
+
+      if (!apiKey || !transcript) {
+        alert('Por favor, informe a chave da API e a anotação.');
+        return;
+      }
+
+      // Salva a chave localmente no navegador para não precisar digitar de novo
+      localStorage.setItem('gemini_api_key', apiKey);
+
+      btn.disabled = true;
+      btn.innerText = 'Consultando inteligência...';
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+
+      const payload = {
+        system_instruction: {
+          parts: [{
+            text: "Você é um extrator de tarefas corporativas. Analise o texto e responda EXCLUSIVAMENTE um JSON sem formatação markdown no seguinte formato: {\"tarefa\": \"verbo de ação + objeto claro\", \"prioridade\": \"ALTA ou MEDIA ou BAIXA\", \"responsavel\": \"nome da pessoa ou Nao atribuido\"}"
+          }]
+        },
+        contents: [{
+          parts: [{ text: transcript }]
+        }]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error?.message || `Erro ${response.status}`);
+        }
+
+        let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        // Remove delimitadores de markdown se o modelo incluir (ex: ```json)
+        rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+        const parsed = JSON.parse(rawText);
+
+        // Preenche a interface visual
+        document.getElementById('tarefaTitulo').innerText = parsed.tarefa || 'Sem descrição';
+        document.getElementById('respNome').innerText = parsed.responsavel || 'Não atribuído';
+
+        const badge = document.getElementById('badgePrioridade');
+        const prio = (parsed.prioridade || 'BAIXA').toUpperCase();
+        badge.innerText = prio;
+        badge.className = 'badge';
+
+        if (prio === 'ALTA') badge.classList.add('badge-alta');
+        else if (prio === 'MEDIA') badge.classList.add('badge-media');
+        else badge.classList.add('badge-baixa');
+
+        document.getElementById('rawJson').innerText = JSON.stringify(parsed, null, 2);
+        resultSection.style.display = 'block';
+
+      } catch (err) {
+        alert('Erro ao processar: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Processar e Extrair Tarefa';
+      }
+    }
+  </script>
+</body>
+</html>
